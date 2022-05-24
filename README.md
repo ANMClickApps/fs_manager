@@ -1,6 +1,6 @@
 # fs_manager
 
-A new Flutter project.
+A new Flutter project: Own Password Manager with Firebase.
 
 ## Getting Started
 
