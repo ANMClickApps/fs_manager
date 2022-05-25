@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:fs_manager/ui/screens/my_home_screen.dart';
-import 'firebase_options.dart';
+import 'package:fs_manager/ui/screens/home_screen.dart';
+import 'package:fs_manager/ui/screens/pincode_screen.dart';
+import 'package:fs_manager/ui/screens/storage_tab.dart';
 import 'ui/screens/login/login_screens.dart';
 
 Future<void> main() async {
@@ -20,11 +21,13 @@ class MyApp extends StatelessWidget {
       title: 'FKeys',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
+        primarySwatch: Colors.green,
       ),
       routes: {
-        MyHomeScreen.id: (context) => const MyHomeScreen(),
+        HomeScreen.id: (context) => const HomeScreen(),
+        AccountsTab.id: (context) => const AccountsTab(),
         LoginScreen.id: (context) => const LoginScreen(),
+        PinCodeScreen.id: (context) => const PinCodeScreen(),
       },
       home: const RootScreen(),
     );
@@ -62,15 +65,14 @@ class _RootScreenState extends State<RootScreen> {
     if (state == 0) {
       return const LoginScreen();
     } else if (state == 1) {
-      return const MyHomeScreen();
+      return const PinCodeScreen();
     }
 
-    return const CircularProgressIndicator();
+    return const Center(child: CircularProgressIndicator());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-        child: Padding(padding: const EdgeInsets.all(8), child: getBody()));
+    return getBody();
   }
 }

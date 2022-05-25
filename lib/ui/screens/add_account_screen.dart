@@ -1,18 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fs_manager/data/db_helper.dart';
 import 'package:fs_manager/data/model/records_model.dart';
 import 'package:fs_manager/style/brand_color.dart';
+import 'package:fs_manager/ui/screens/home_screen.dart';
 import '../../data/account_logo.dart';
 import '../widget/account_action.dart';
 import '../widget/account_textfield.dart';
 import '../widget/account_title.dart';
-import 'my_home_screen.dart';
 
 class AddAccountScreen extends StatefulWidget {
-  const AddAccountScreen({Key? key, this.model}) : super(key: key);
+  const AddAccountScreen(
+      {Key? key, this.model, this.id, this.isShowData = false})
+      : super(key: key);
   final RecordModel? model;
+  final bool isShowData;
+  final String? id;
 
   @override
   State<AddAccountScreen> createState() => _AddAccountScreenState();
@@ -25,7 +31,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   late TextEditingController _passwordController;
   late TextEditingController _webSiteController;
   late TextEditingController _tagController;
-  List<String> _tags = [];
+  List<String> tags = [];
   late bool _isShowData;
 
   @override
@@ -36,10 +42,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     _webSiteController = TextEditingController();
     _passwordController = TextEditingController();
     _tagController = TextEditingController();
-    _isShowData = false;
-
+    _isShowData = widget.isShowData;
     getModelData();
-
     super.initState();
   }
 
@@ -74,12 +78,12 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         userName: _userNameController.text.trim(),
         password: _passwordController.text.trim(),
         webSite: _webSiteController.text.trim(),
-        tags: _tags,
+        tags: tags,
       );
       Future.delayed(
           const Duration(milliseconds: 500),
           (() => Navigator.pushNamedAndRemoveUntil(
-              context, MyHomeScreen.id, (route) => false)));
+              context, HomeScreen.id, (route) => false)));
     } else {
       showMessage(text: 'Something wront with User');
     }
@@ -92,7 +96,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         _userNameController.text = widget.model!.username;
         _passwordController.text = widget.model!.password;
         _webSiteController.text = widget.model!.webSite;
-        _tags.addAll(widget.model!.tag);
+        tags.addAll(widget.model!.tag);
         selectedValue = widget.model!.logoValue;
       });
     }
@@ -103,7 +107,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 24.0),
+          padding: const EdgeInsets.fromLTRB(18.0, 24.0, 18.0, 0),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,6 +142,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 _buildTagRow(),
                 _buildSaveButton(),
                 if (_isShowData) _buildCRUDButton(),
+                const SizedBox(height: 18.0),
               ],
             ),
           ),
@@ -167,7 +172,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   } else if (_webSiteController.text.isEmpty) {
                     showMessage(text: 'Please, check "Website"!');
                     return;
-                  } else if (_tags.isEmpty) {
+                  } else if (tags.isEmpty) {
                     showMessage(text: 'Please, add at least one "Tag"!');
                     return;
                   }
@@ -184,18 +189,31 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   Column _buildCRUDButton() {
     return Column(
       children: [
+        const SizedBox(height: 18.0),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             AccountAction(
               title: 'copy Username',
               iconData: Icons.copy,
-              onPressed: () {},
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: _userNameController.text))
+                    .then((_) {
+                  showMessage(
+                      text: 'Username copied to clipboard', isError: false);
+                });
+              },
             ),
             AccountAction(
               title: 'copy Password',
               iconData: Icons.copy,
-              onPressed: () {},
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: _passwordController.text))
+                    .then((_) {
+                  showMessage(
+                      text: 'Password copied to clipboard', isError: false);
+                });
+              },
             ),
           ],
         ),
@@ -204,10 +222,31 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           title: 'Delete record',
           iconData: Icons.delete_outline,
           isDelete: true,
-          onPressed: () {},
+          onPressed: () {
+            String? uid = FirebaseAuth.instance.currentUser?.uid;
+            if (uid != null) {
+              try {
+                FirebaseDatabase.instance
+                    .ref()
+                    .child('users/$uid/${widget.id}')
+                    .remove()
+                    .then((value) => sayWellDone());
+              } catch (e) {
+                showMessage(text: 'Something wrong: $e');
+              }
+            }
+          },
         ),
       ],
     );
+  }
+
+  sayWellDone() {
+    showMessage(text: 'Record removed', isError: false);
+    Future.delayed(
+        const Duration(milliseconds: 1000),
+        (() => Navigator.pushNamedAndRemoveUntil(
+            context, HomeScreen.id, (route) => false)));
   }
 
   Column _buildTagRow() {
@@ -225,7 +264,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               if (text.contains(',')) {
                 List data = text.split(',');
                 setState(() {
-                  _tags.add(data[0]);
+                  tags.add(data[0]);
                   _tagController.clear();
                 });
               }
@@ -241,10 +280,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           child: ListView.builder(
               shrinkWrap: false,
               scrollDirection: Axis.horizontal,
-              itemCount: _tags.length,
+              itemCount: tags.length,
               itemBuilder: ((context, index) => InkWell(
                     onTap: () => setState(() {
-                      _tags.removeAt(index);
+                      tags.removeAt(index);
                     }),
                     child: Container(
                       margin: const EdgeInsets.fromLTRB(0, 4.0, 8.0, 4.0),
@@ -255,7 +294,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          _tags[index],
+                          tags[index],
                           style: const TextStyle(
                               fontSize: 18.0,
                               fontWeight: FontWeight.normal,
@@ -289,6 +328,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Container(
+                                  margin: const EdgeInsets.only(left: 4.0),
                                   height: 48.0,
                                   width: 48.0,
                                   decoration: BoxDecoration(

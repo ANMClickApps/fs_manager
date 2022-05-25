@@ -22,6 +22,7 @@ class AccountAction extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
+          margin: const EdgeInsets.only(left: 4.0),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(
                 12.0,

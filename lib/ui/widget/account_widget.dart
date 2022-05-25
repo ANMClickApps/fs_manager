@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:fs_manager/style/brand_color.dart';
 
 class AccountWidget extends StatelessWidget {
   const AccountWidget({
@@ -40,25 +41,38 @@ class AccountWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12.0),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                      fontSize: 18.0, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(
-                  width: 220.0,
-                  child: Text(
-                    userName,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                            fontSize: 18.0, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(
+                        width: 240.0,
+                        child: Text(
+                          userName,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            )
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: BrandColor.dark.withOpacity(0.5),
+                    size: 16.0,
+                  )
+                ],
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8.0)

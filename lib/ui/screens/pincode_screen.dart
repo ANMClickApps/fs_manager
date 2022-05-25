@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fs_manager/style/brand_color.dart';
 
-import 'login_form.dart';
+import 'pincode/pincode_form.dart';
 
-class LoginScreen extends StatelessWidget {
-  static const String id = 'login';
-  const LoginScreen({Key? key}) : super(key: key);
+class PinCodeScreen extends StatelessWidget {
+  static const String id = 'pincode';
+  const PinCodeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        height: double.infinity,
         decoration: const BoxDecoration(
             gradient: LinearGradient(colors: [
           BrandColor.dark,
@@ -38,7 +39,7 @@ class LoginScreen extends StatelessWidget {
                 )),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 18.0),
-              child: LoginForm(),
+              child: PinCodeForm(),
             ),
           ],
         ),
