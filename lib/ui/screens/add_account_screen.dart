@@ -122,7 +122,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 AccountTextField(
                   controller: _nameController,
                   title: 'Name',
-                  hintText: 'Alex Filatov',
+                  hintText: 'Alex Smith',
                 ),
                 AccountTextField(
                   controller: _userNameController,
