@@ -218,24 +218,43 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           ],
         ),
         const SizedBox(height: 12.0),
-        AccountAction(
-          title: 'Delete record',
-          iconData: Icons.delete_outline,
-          isDelete: true,
-          onPressed: () {
-            String? uid = FirebaseAuth.instance.currentUser?.uid;
-            if (uid != null) {
-              try {
-                FirebaseDatabase.instance
-                    .ref()
-                    .child('users/$uid/${widget.id}')
-                    .remove()
-                    .then((value) => sayWellDone());
-              } catch (e) {
-                showMessage(text: 'Something wrong: $e');
-              }
-            }
-          },
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            AccountAction(
+              title: 'login+password',
+              iconData: Icons.copy,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(
+                        text:
+                            'username: ${_userNameController.text}\npassword: ${_passwordController.text}'))
+                    .then((_) {
+                  showMessage(
+                      text: 'Username and Password copied to clipboard',
+                      isError: false);
+                });
+              },
+            ),
+            AccountAction(
+              title: 'Delete record',
+              iconData: Icons.delete_outline,
+              isDelete: true,
+              onPressed: () {
+                String? uid = FirebaseAuth.instance.currentUser?.uid;
+                if (uid != null) {
+                  try {
+                    FirebaseDatabase.instance
+                        .ref()
+                        .child('users/$uid/${widget.id}')
+                        .remove()
+                        .then((value) => sayWellDone());
+                  } catch (e) {
+                    showMessage(text: 'Something wrong: $e');
+                  }
+                }
+              },
+            ),
+          ],
         ),
       ],
     );
