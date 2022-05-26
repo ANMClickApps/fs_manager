@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:fs_manager/ui/screens/home_screen.dart';
 import 'package:fs_manager/ui/screens/pincode_screen.dart';
-import 'package:fs_manager/ui/screens/storage_tab.dart';
+import 'package:fs_manager/ui/screens/account_tab.dart';
 import 'ui/screens/login/login_screens.dart';
 
 Future<void> main() async {

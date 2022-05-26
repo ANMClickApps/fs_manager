@@ -3,7 +3,7 @@ import 'package:fs_manager/ui/screens/settings_tab.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
 import '../../style/brand_color.dart';
-import 'storage_tab.dart';
+import 'account_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String id = 'home';

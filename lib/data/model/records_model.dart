@@ -28,15 +28,16 @@ class RecordModel {
   final String webSite;
   final String username;
 
-  factory RecordModel.fromMap(Map<dynamic, dynamic> json) => RecordModel(
-        logoValue: MyEncriptionDecription.decryptAES(json["logoValue"]),
-        password: MyEncriptionDecription.decryptAES(json["password"]),
-        name: MyEncriptionDecription.decryptAES(json["name"]),
-        tag: List<String>.from(
-            json["tag"].map((x) => MyEncriptionDecription.decryptAES(x))),
-        webSite: MyEncriptionDecription.decryptAES(json["web_site"]),
-        username: MyEncriptionDecription.decryptAES(json["username"]),
-      );
+  factory RecordModel.fromMap(Map<dynamic, dynamic> json) {
+    return RecordModel(
+      logoValue: json["logoValue"],
+      password: json["password"],
+      name: json["name"],
+      tag: List<String>.from(json["tag"].map((x) => x)),
+      webSite: json["web_site"],
+      username: json["username"],
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         "logoValue": logoValue,
@@ -46,4 +47,13 @@ class RecordModel {
         "web_site": webSite,
         "username": username,
       };
+}
+
+class AccountRec {
+  final String id;
+  final RecordModel model;
+  AccountRec({
+    required this.id,
+    required this.model,
+  });
 }

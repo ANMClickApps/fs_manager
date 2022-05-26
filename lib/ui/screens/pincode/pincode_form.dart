@@ -38,8 +38,7 @@ class _PinCodeFormState extends State<PinCodeForm> {
       content: Text(
         text,
         style: TextStyle(
-          color: isError ? Colors.white : BrandColor.dark,
-        ),
+            color: isError ? Colors.white : BrandColor.dark, fontSize: 18.0),
       ),
       backgroundColor: isError ? BrandColor.red : BrandColor.green,
     ));
@@ -53,19 +52,23 @@ class _PinCodeFormState extends State<PinCodeForm> {
     } catch (e) {
       showMessage('Something went wrong: $e', true);
     }
-
-    // if (value != null) {
-    //   showMessage('PIN code created successfully');
-    // } else {
-    //   showMessage('Something went wrong...', true);
-    // }
   }
 
   void goHome() {
     Navigator.pushNamedAndRemoveUntil(context, HomeScreen.id, (route) => false);
   }
 
-  void checkCorrectPIN(String pin) {}
+  void checkCorrectPIN(String pin) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? pinCode = prefs.getString('pin');
+    if (pinCode != null) {
+      if (pinCode == pin) {
+        goHome();
+      } else {
+        showMessage('PIN is wrong', true);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

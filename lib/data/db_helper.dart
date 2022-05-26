@@ -15,16 +15,31 @@ class DBHelper {
     if (FirebaseAuth.instance.currentUser != null) {
       //int createAt = DateTime.now().millisecondsSinceEpoch;
       DatabaseReference ref = FirebaseDatabase.instance.ref("users/$uid");
+      Future<List> getList() async {
+        List data = [];
+        for (var e in tags) {
+          var res = (await MyEncriptionDecription.encryptAES(e)).base64;
+          data.add(res);
+        }
+        return data;
+      }
 
       var encryptLogoValue =
-          MyEncriptionDecription.encryptAES(logoValue).base64;
-      var encryptName = MyEncriptionDecription.encryptAES(name).base64;
-      var encryptUserName = MyEncriptionDecription.encryptAES(userName).base64;
-      var encryptPassword = MyEncriptionDecription.encryptAES(password).base64;
-      var encryptWebSite = MyEncriptionDecription.encryptAES(webSite).base64;
-      List<dynamic> encryptTags =
-          tags.map((e) => MyEncriptionDecription.encryptAES(e).base64).toList();
-
+          (await MyEncriptionDecription.encryptAES(logoValue)).base64;
+      var encryptName = (await MyEncriptionDecription.encryptAES(name)).base64;
+      var encryptUserName =
+          (await MyEncriptionDecription.encryptAES(userName)).base64;
+      var encryptPassword =
+          (await MyEncriptionDecription.encryptAES(password)).base64;
+      var encryptWebSite =
+          (await MyEncriptionDecription.encryptAES(webSite)).base64;
+      List encryptTags = await getList();
+      // List<dynamic> encryptTags = tags.map((e) async {
+      //   var t = (await MyEncriptionDecription.encryptAES(e)).base64;
+      //   return t;
+      // }).toList();
+      print(
+          'uid $uid encryptLogoValue $encryptLogoValue, encryptName $encryptName encryptUserName $encryptUserName encryptPassword $encryptPassword encryptWebSite $encryptWebSite encryptTags $encryptTags');
       await ref.push().set({
         "logoValue": encryptLogoValue,
         "name": encryptName,
