@@ -24,7 +24,9 @@ class _AccountsTabState extends State<AccountsTab> {
   late Future<RecordModel> dataFuture;
   List<AccountRec> recordList = [];
   String noDataText = 'No data available.';
+  String query = '';
   bool noData = true;
+  int countSeacrh = 0;
   @override
   void initState() {
     _searchController = TextEditingController();
@@ -106,6 +108,33 @@ class _AccountsTabState extends State<AccountsTab> {
     });
   }
 
+  void searchRecord(String query) {
+    List<AccountRec> suggestions = [];
+    final input = query.toUpperCase();
+    int count = 0;
+
+    for (var record in recordList) {
+      count++;
+
+      List<String> tags = [];
+      tags = record.model.tag.map((e) {
+        return e.toUpperCase();
+      }).toList();
+
+      for (var t in tags) {
+        if (t.contains(input)) {
+          suggestions.add(record);
+        }
+      }
+    }
+
+    setState(() {
+      this.query = query;
+      recordList = suggestions;
+      countSeacrh = count;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,6 +154,13 @@ class _AccountsTabState extends State<AccountsTab> {
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: TextField(
                     controller: _searchController,
+                    onChanged: searchRecord,
+                    onSubmitted: (text) {
+                      if (text.isEmpty) {
+                        recordList.clear();
+                        getdataFromFB();
+                      }
+                    },
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(borderSide: BorderSide.none),
                       labelText: 'Type tag',
