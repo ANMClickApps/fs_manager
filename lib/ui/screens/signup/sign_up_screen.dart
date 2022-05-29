@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:fs_manager/ui/screens/signup/sign_up_form.dart';
 
 import '../../../style/brand_color.dart';
-import 'login_form.dart';
 
-class LoginScreen extends StatelessWidget {
-  static const String id = 'login';
-  const LoginScreen({Key? key}) : super(key: key);
+class SignUpScreen extends StatelessWidget {
+  static const String id = 'signUp';
+  const SignUpScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class LoginScreen extends StatelessWidget {
                 )),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 18.0),
-              child: LoginForm(),
+              child: SignUpForm(),
             ),
           ],
         ),

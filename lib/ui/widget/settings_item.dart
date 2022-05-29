@@ -4,27 +4,27 @@ import '../../style/brand_color.dart';
 import '../../style/brand_text.dart';
 
 class SettingsItem extends StatelessWidget {
-  const SettingsItem({
-    Key? key,
-    required this.title,
-    required this.subtitle,
-    required this.iconData,
-    required this.ontap,
-  }) : super(key: key);
+  const SettingsItem(
+      {Key? key,
+      required this.title,
+      required this.subtitle,
+      required this.iconData,
+      required this.onTap})
+      : super(key: key);
   final String title;
   final String subtitle;
   final IconData iconData;
-  final VoidCallback ontap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: ontap,
+      onTap: onTap,
       child: Row(
         children: [
           Icon(
             iconData,
-            size: 32.0,
+            size: 36.0,
             color: BrandColor.dark,
           ),
           const SizedBox(width: 12.0),
@@ -35,6 +35,9 @@ class SettingsItem extends StatelessWidget {
               Text(
                 title,
                 style: BrandText.settingTitle,
+              ),
+              const SizedBox(
+                height: 4.0,
               ),
               Text(
                 subtitle,

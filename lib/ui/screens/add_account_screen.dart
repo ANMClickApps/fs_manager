@@ -102,6 +102,14 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     }
   }
 
+  sayWellDone() {
+    showMessage(text: 'Record removed', isError: false);
+    Future.delayed(
+        const Duration(milliseconds: 1000),
+        (() => Navigator.pushNamedAndRemoveUntil(
+            context, HomeScreen.id, (route) => false)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -258,14 +266,6 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         ),
       ],
     );
-  }
-
-  sayWellDone() {
-    showMessage(text: 'Record removed', isError: false);
-    Future.delayed(
-        const Duration(milliseconds: 1000),
-        (() => Navigator.pushNamedAndRemoveUntil(
-            context, HomeScreen.id, (route) => false)));
   }
 
   Column _buildTagRow() {
