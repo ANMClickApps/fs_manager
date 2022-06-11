@@ -1,4 +1,5 @@
 # fs_manager
+You can install from [Google Play](https://play.google.com/store/apps/details?id=com.anm.click.fmanager)
 
 A new Flutter project: Own Password Manager with Firebase.
 
