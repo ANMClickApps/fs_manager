@@ -59,3 +59,15 @@ ios/Runner/GoogleService-Info.plist
 .env
 .env.local
 .env.*.local
+
+# Android signing
+android/key.properties
+*.jks
+*.keystore
+
+# Release documentation - now universal and safe to commit
+
+# iOS signing
+ios/Runner/GoogleService-Info.plist
+*.p12
+*.mobileprovision
