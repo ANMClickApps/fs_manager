@@ -49,6 +49,8 @@ prompt_for_file() {
         echo ""
         print_info "$prompt_message"
         echo -e "${YELLOW}Tip: You can drag and drop the file into terminal${NC}"
+        echo ""
+        printf "${GREEN}Path:${NC} "
         read -r file_path
         
         # Expand tilde to home directory
