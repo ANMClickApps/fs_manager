@@ -90,9 +90,10 @@ class _SignUpFormState extends State<SignUpForm> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.15),
         const Text(
           'Hey There,\nWelcome Back.',
           style: TextStyle(
@@ -219,7 +220,7 @@ class _SignUpFormState extends State<SignUpForm> {
                         padding: EdgeInsets.symmetric(vertical: 12.0),
                         child: Text(
                           'Sign Up',
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 18.0, color: Colors.white),
                         ),
                       ),
                     ),

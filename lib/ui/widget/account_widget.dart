@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fs_manager/style/brand_color.dart';
+import 'package:fs_manager/data/account_logo.dart';
 
 class AccountWidget extends StatelessWidget {
   const AccountWidget({
     Key? key,
-    required this.iconPath,
+    required this.accountLogo,
     required this.userName,
     required this.name,
   }) : super(key: key);
 
-  final String iconPath;
+  final AccountLogo accountLogo;
   final String userName;
   final String name;
 
@@ -24,20 +24,17 @@ class AccountWidget extends StatelessWidget {
               height: 48.0,
               width: 48.0,
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(
-                    12.0,
-                  ),
-                  color: Colors.white,
-                  boxShadow: const [
-                    BoxShadow(
-                        offset: Offset(0, 4),
-                        blurRadius: 4.0,
-                        spreadRadius: 0,
-                        color: Colors.black26)
-                  ]),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SvgPicture.asset(iconPath),
+                borderRadius: BorderRadius.circular(12.0),
+                color: accountLogo.color.withOpacity(0.1),
+                border: Border.all(
+                  color: accountLogo.color.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                accountLogo.iconData,
+                color: accountLogo.color,
+                size: 24.0,
               ),
             ),
             const SizedBox(width: 12.0),

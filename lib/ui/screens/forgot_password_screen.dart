@@ -18,8 +18,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   void initState() {
-    _emailController = TextEditingController();
     super.initState();
+    // Автоматично заповнюємо email поточного користувача
+    final currentUser = FirebaseAuth.instance.currentUser;
+    _emailController = TextEditingController(
+      text: currentUser?.email ?? '',
+    );
   }
 
   @override
@@ -29,18 +33,52 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> resetPassword() async {
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+              child: CircularProgressIndicator(),
+            ));
+
     try {
+      // print('Sending password reset email to: ${_emailController.text.trim()}');
       await FirebaseAuth.instance
           .sendPasswordResetEmail(email: _emailController.text.trim());
+      // print('Password reset email sent successfully');
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
       ShowMessageHelper.showMessage(
-          context: context, text: 'Password reset Email send', isError: false);
+          context: context,
+          text: 'Password reset email sent. Check your inbox.',
+          isError: false);
+
       // ignore: use_build_context_synchronously
       Navigator.of(context).popUntil((route) => route.isFirst);
     } on FirebaseAuthException catch (e) {
-      print(e);
+      // print('FirebaseAuthException code: ${e.code}');
+      // print('FirebaseAuthException message: ${e.message}');
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      String errorMessage = 'Error: ${e.message}';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No user found with this email.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Invalid email address.';
+      }
+
+      ShowMessageHelper.showMessage(context: context, text: errorMessage);
+    } catch (e) {
+      // print('General error: $e');
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
       ShowMessageHelper.showMessage(
-          context: context, text: e.message.toString());
-      Navigator.of(context).pop();
+          context: context, text: 'An error occurred: $e');
     }
   }
 

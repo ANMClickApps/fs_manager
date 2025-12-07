@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:fs_manager/data/db_helper.dart';
 import 'package:fs_manager/data/model/records_model.dart';
 import 'package:fs_manager/style/brand_color.dart';
@@ -71,15 +70,29 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   _saveRecord() {
     String? userUID = FirebaseAuth.instance.currentUser?.uid;
     if (userUID != null) {
-      DBHelper.insertRecord(
-        uid: userUID,
-        logoValue: selectedValue,
-        name: _nameController.text.trim(),
-        userName: _userNameController.text.trim(),
-        password: _passwordController.text.trim(),
-        webSite: _webSiteController.text.trim(),
-        tags: tags,
-      );
+      // Якщо є ID - оновлюємо існуючий запис, якщо немає - створюємо новий
+      if (widget.id != null) {
+        DBHelper.updateRecord(
+          uid: userUID,
+          recordId: widget.id!,
+          logoValue: selectedValue,
+          name: _nameController.text.trim(),
+          userName: _userNameController.text.trim(),
+          password: _passwordController.text.trim(),
+          webSite: _webSiteController.text.trim(),
+          tags: tags,
+        );
+      } else {
+        DBHelper.insertRecord(
+          uid: userUID,
+          logoValue: selectedValue,
+          name: _nameController.text.trim(),
+          userName: _userNameController.text.trim(),
+          password: _passwordController.text.trim(),
+          webSite: _webSiteController.text.trim(),
+          tags: tags,
+        );
+      }
       Future.delayed(
           const Duration(milliseconds: 500),
           (() => Navigator.pushNamedAndRemoveUntil(
@@ -103,16 +116,96 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   sayWellDone() {
-    showMessage(text: 'Record removed', isError: false);
+    showMessage(text: 'Moved to trash', isError: false);
     Future.delayed(
-        const Duration(milliseconds: 1000),
+        const Duration(milliseconds: 500),
         (() => Navigator.pushNamedAndRemoveUntil(
             context, HomeScreen.id, (route) => false)));
+  }
+
+  void _showMoveToTrashDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Move to Trash?'),
+        content: Text(
+            'Move "${_nameController.text}" to trash? You can restore it later from Settings.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: BrandColor.red),
+            onPressed: () {
+              Navigator.pop(context);
+              _moveToTrash();
+            },
+            child: const Text('Move to Trash',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _moveToTrash() async {
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || widget.id == null) {
+      showMessage(text: 'Error: Cannot move to trash');
+      return;
+    }
+
+    try {
+      // Отримуємо дані запису
+      final snapshot = await FirebaseDatabase.instance
+          .ref()
+          .child('users/$uid/${widget.id}')
+          .get();
+
+      if (snapshot.exists) {
+        // Переносимо в корзину
+        await FirebaseDatabase.instance
+            .ref()
+            .child('trash/$uid')
+            .push()
+            .set(snapshot.value);
+
+        // Видаляємо з users
+        await FirebaseDatabase.instance
+            .ref()
+            .child('users/$uid/${widget.id}')
+            .remove();
+
+        sayWellDone();
+      }
+    } catch (e) {
+      showMessage(text: 'Error moving to trash: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: _isShowData
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: BrandColor.dark),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+        title: Text(
+          _isShowData ? 'Account Info' : 'Create Account',
+          style: const TextStyle(
+            color: BrandColor.dark,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18.0, 24.0, 18.0, 0),
@@ -168,29 +261,88 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                     backgroundColor:
                         MaterialStateProperty.all<Color>(BrandColor.green)),
                 onPressed: () {
+                  // Перевірка обов'язкових полів
                   if (_nameController.text.isEmpty) {
-                    showMessage(text: 'Please, check "Name"!');
+                    showMessage(
+                        text: '📝 Name is required to identify this account');
                     return;
                   } else if (_userNameController.text.isEmpty) {
-                    showMessage(text: 'Please, check "Username"!');
+                    showMessage(text: '✉️ Username or Email cannot be empty');
                     return;
                   } else if (_passwordController.text.isEmpty) {
-                    showMessage(text: 'Please, check "Password"!');
-                    return;
-                  } else if (_webSiteController.text.isEmpty) {
-                    showMessage(text: 'Please, check "Website"!');
-                    return;
-                  } else if (tags.isEmpty) {
-                    showMessage(text: 'Please, add at least one "Tag"!');
+                    showMessage(text: '🔒 Password is required for security');
                     return;
                   }
-                  _saveRecord();
+
+                  // Перевірка необов'язкових полів
+                  List<String> emptyFields = [];
+                  if (_webSiteController.text.isEmpty) {
+                    emptyFields.add('Website');
+                  }
+                  if (tags.isEmpty) {
+                    emptyFields.add('Tags');
+                  }
+
+                  // Якщо є порожні необов'язкові поля - показуємо діалог
+                  if (emptyFields.isNotEmpty) {
+                    _showConfirmationDialog(emptyFields);
+                  } else {
+                    _saveRecord();
+                  }
                 },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.0),
-                  child: Text('Save'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: Text(
+                    widget.id != null ? 'Update' : 'Save',
+                    style: const TextStyle(fontSize: 18.0, color: Colors.white),
+                  ),
                 )))
       ],
+    );
+  }
+
+  void _showConfirmationDialog(List<String> emptyFields) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(widget.id != null ? 'Confirm Update' : 'Confirm Save'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('The following optional fields are empty:'),
+              const SizedBox(height: 8.0),
+              ...emptyFields.map((field) => Padding(
+                    padding: const EdgeInsets.only(left: 16.0, top: 4.0),
+                    child: Text('• $field',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                  )),
+              const SizedBox(height: 12.0),
+              const Text('Do you want to continue without filling them?'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: BrandColor.green,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _saveRecord();
+              },
+              child: Text(
+                widget.id != null ? 'Update Anyway' : 'Save Anyway',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -244,23 +396,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               },
             ),
             AccountAction(
-              title: 'Delete record',
+              title: 'Move to Trash',
               iconData: Icons.delete_outline,
               isDelete: true,
-              onPressed: () {
-                String? uid = FirebaseAuth.instance.currentUser?.uid;
-                if (uid != null) {
-                  try {
-                    FirebaseDatabase.instance
-                        .ref()
-                        .child('users/$uid/${widget.id}')
-                        .remove()
-                        .then((value) => sayWellDone());
-                  } catch (e) {
-                    showMessage(text: 'Something wrong: $e');
-                  }
-                }
-              },
+              onPressed: () => _showMoveToTrashDialog(),
             ),
           ],
         ),
@@ -337,6 +476,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 hint: const Text('Select Account'),
                 value: selectedValue,
                 itemHeight: 60.0,
+                isExpanded: true,
                 items: accountsList
                     .map((account) => DropdownMenuItem<String>(
                         value: account.title,
@@ -351,27 +491,25 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                                   height: 48.0,
                                   width: 48.0,
                                   decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                        12.0,
-                                      ),
-                                      color: Colors.white,
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          offset: Offset(0, 4),
-                                          blurRadius: 4.0,
-                                          spreadRadius: 0,
-                                          color: Colors.black26,
-                                        )
-                                      ]),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child:
-                                        SvgPicture.asset(account.accountImage),
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      color: account.color.withOpacity(0.1),
+                                      border: Border.all(
+                                        color: account.color.withOpacity(0.3),
+                                        width: 1,
+                                      )),
+                                  child: Icon(
+                                    account.iconData,
+                                    color: account.color,
+                                    size: 24.0,
                                   )),
                               const SizedBox(width: 12.0),
-                              Text(
-                                account.title,
-                                style: const TextStyle(color: BrandColor.dark),
+                              Expanded(
+                                child: Text(
+                                  account.title,
+                                  style:
+                                      const TextStyle(color: BrandColor.dark),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               )
                             ],
                           ),

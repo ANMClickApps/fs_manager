@@ -88,9 +88,10 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.15),
         const Text(
           'Hey,\nLogin Now.',
           style: TextStyle(
@@ -167,7 +168,7 @@ class _LoginFormState extends State<LoginForm> {
                         padding: EdgeInsets.symmetric(vertical: 12.0),
                         child: Text(
                           'Login',
-                          style: TextStyle(fontSize: 18.0),
+                          style: TextStyle(fontSize: 18.0, color: Colors.white),
                         ),
                       ),
                     ),

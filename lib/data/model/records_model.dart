@@ -4,8 +4,6 @@
 
 import 'dart:convert';
 
-import 'package:fs_manager/data/my_encryption.dart';
-
 RecordModel recordsModelFromMap(String str) =>
     RecordModel.fromMap(json.decode(str));
 
@@ -30,12 +28,14 @@ class RecordModel {
 
   factory RecordModel.fromMap(Map<dynamic, dynamic> json) {
     return RecordModel(
-      logoValue: json["logoValue"],
-      password: json["password"],
-      name: json["name"],
-      tag: List<String>.from(json["tag"].map((x) => x)),
-      webSite: json["web_site"],
-      username: json["username"],
+      logoValue: json["logoValue"] ?? "",
+      password: json["password"] ?? "",
+      name: json["name"] ?? "",
+      tag: json["tag"] != null 
+          ? List<String>.from(json["tag"].map((x) => x.toString()))
+          : [],
+      webSite: json["web_site"] ?? "",
+      username: json["username"] ?? "",
     );
   }
 

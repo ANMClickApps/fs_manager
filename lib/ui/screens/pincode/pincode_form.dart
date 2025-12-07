@@ -155,7 +155,7 @@ class _PinCodeFormState extends State<PinCodeForm> {
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                       child: Text(
                         _hasPin ? 'Next' : 'Make PIN',
-                        style: const TextStyle(fontSize: 18.0),
+                        style: const TextStyle(fontSize: 18.0, color: Colors.white),
                       ),
                     ),
                   ),

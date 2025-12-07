@@ -10,8 +10,9 @@ class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
             gradient: LinearGradient(
           colors: [
@@ -40,9 +41,13 @@ class SignUpScreen extends StatelessWidget {
                   color: Colors.white12,
                   size: 60.0,
                 )),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18.0),
-              child: SignUpForm(),
+            SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 18.0,
+                right: 18.0,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: const SignUpForm(),
             ),
           ],
         ),

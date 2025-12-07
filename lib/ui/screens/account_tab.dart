@@ -23,6 +23,8 @@ class _AccountsTabState extends State<AccountsTab> {
   late DatabaseReference _ref;
   late Future<RecordModel> dataFuture;
   List<AccountRec> recordList = [];
+  Set<String> selectedRecords = {};
+  bool isSelectionMode = false;
   String noDataText = 'No data available.';
   String query = '';
   bool noData = true;
@@ -56,7 +58,7 @@ class _AccountsTabState extends State<AccountsTab> {
               ))
           .toList();
       for (var item in data) {
-        updateRecordList(item.model, item.id);
+        await updateRecordList(item.model, item.id);
       }
     } else {
       setState(() {
@@ -65,47 +67,188 @@ class _AccountsTabState extends State<AccountsTab> {
     }
   }
 
-  String _getImage(String logoValue) {
-    for (var account in accountsList) {
-      if (account.title == logoValue) {
-        return account.accountImage;
+  // Функція для очищення всіх записів (тимчасово для міграції)
+  Future<void> clearAllRecords() async {
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirebaseDatabase.instance.ref().child('users/$uid').remove();
+      setState(() {
+        recordList.clear();
+        noData = true;
+      });
+      // print('All records cleared!');
+    }
+  }
+
+  void toggleSelection(String recordId) {
+    setState(() {
+      if (selectedRecords.contains(recordId)) {
+        selectedRecords.remove(recordId);
+        if (selectedRecords.isEmpty) {
+          isSelectionMode = false;
+        }
+      } else {
+        selectedRecords.add(recordId);
+      }
+    });
+  }
+
+  void selectAll() {
+    setState(() {
+      selectedRecords = recordList.map((e) => e.id).toSet();
+    });
+  }
+
+  void deselectAll() {
+    setState(() {
+      selectedRecords.clear();
+      isSelectionMode = false;
+    });
+  }
+
+  Future<void> moveSelectedToTrash() async {
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || selectedRecords.isEmpty) return;
+
+    try {
+      for (String recordId in selectedRecords) {
+        // Отримуємо дані запису
+        final snapshot = await FirebaseDatabase.instance
+            .ref()
+            .child('users/$uid/$recordId')
+            .get();
+
+        if (snapshot.exists) {
+          // Переносимо в корзину
+          await FirebaseDatabase.instance
+              .ref()
+              .child('trash/$uid')
+              .push()
+              .set(snapshot.value);
+
+          // Видаляємо з users
+          await FirebaseDatabase.instance
+              .ref()
+              .child('users/$uid/$recordId')
+              .remove();
+        }
+      }
+
+      // Оновлюємо список
+      setState(() {
+        recordList.removeWhere((record) => selectedRecords.contains(record.id));
+        selectedRecords.clear();
+        isSelectionMode = false;
+        if (recordList.isEmpty) {
+          noData = true;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Moved to trash'),
+            backgroundColor: BrandColor.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: BrandColor.red,
+          ),
+        );
       }
     }
-    return 'assets/icons/github.svg';
+  }
+
+  void showMoveToTrashDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Move to Trash?'),
+        content: Text(
+            'Move ${selectedRecords.length} account(s) to trash? You can restore them later from Settings.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: BrandColor.red),
+            onPressed: () {
+              Navigator.pop(context);
+              moveSelectedToTrash();
+            },
+            child: const Text('Move to Trash',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  AccountLogo _getAccountLogo(String logoValue) {
+    for (var account in accountsList) {
+      if (account.title.toLowerCase() == logoValue.toLowerCase()) {
+        return account;
+      }
+    }
+
+    // Default fallback
+    return accountsList.firstWhere(
+      (account) => account.title == 'Custom',
+      orElse: () => accountsList.first,
+    );
   }
 
   Future<void> updateRecordList(RecordModel model, String id) async {
-    String decLogoValue =
-        await MyEncriptionDecription.decryptAES(model.logoValue);
-    String decName = await MyEncriptionDecription.decryptAES(model.name);
-    String decPassword =
-        await MyEncriptionDecription.decryptAES(model.password);
-    String decUsername =
-        await MyEncriptionDecription.decryptAES(model.username);
-    String decWebSite = await MyEncriptionDecription.decryptAES(model.webSite);
+    try {
+      String decLogoValue =
+          await MyEncriptionDecription.decryptAES(model.logoValue);
+      String decName = await MyEncriptionDecription.decryptAES(model.name);
+      String decPassword =
+          await MyEncriptionDecription.decryptAES(model.password);
+      String decUsername =
+          await MyEncriptionDecription.decryptAES(model.username);
+      String decWebSite =
+          await MyEncriptionDecription.decryptAES(model.webSite);
 
-    Future<List<String>> getList() async {
-      List<String> data = [];
-      for (var e in model.tag) {
-        var res = await MyEncriptionDecription.decryptAES(e);
-        data.add(res.toString());
+      Future<List<String>> getList() async {
+        List<String> data = [];
+        for (var e in model.tag) {
+          try {
+            var res = await MyEncriptionDecription.decryptAES(e);
+            if (res.isNotEmpty) {
+              data.add(res.toString());
+            }
+          } catch (e) {
+            // print('Error decrypting tag: $e');
+            // Пропускаємо пошкоджений тег
+          }
+        }
+        return data;
       }
-      return data;
+
+      List<String> decTags = await getList();
+
+      setState(() {
+        recordList.add(AccountRec(
+            id: id,
+            model: RecordModel(
+                logoValue: decLogoValue,
+                name: decName,
+                password: decPassword,
+                username: decUsername,
+                webSite: decWebSite,
+                tag: decTags)));
+      });
+    } catch (e) {
+      // print('Error decrypting record $id: $e');
+      // Пропускаємо пошкоджений запис
     }
-
-    List<String> decTags = await getList();
-
-    setState(() {
-      recordList.add(AccountRec(
-          id: id,
-          model: RecordModel(
-              logoValue: decLogoValue,
-              name: decName,
-              password: decPassword,
-              username: decUsername,
-              webSite: decWebSite,
-              tag: decTags)));
-    });
   }
 
   void searchRecord(String query) {
@@ -138,6 +281,33 @@ class _AccountsTabState extends State<AccountsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: isSelectionMode
+          ? AppBar(
+              backgroundColor: BrandColor.green,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: deselectAll,
+              ),
+              title: Text(
+                '${selectedRecords.length} selected',
+                style: const TextStyle(color: Colors.white),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.select_all, color: Colors.white),
+                  onPressed: selectAll,
+                  tooltip: 'Select All',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.white),
+                  onPressed:
+                      selectedRecords.isEmpty ? null : showMoveToTrashDialog,
+                  tooltip: 'Move to Trash',
+                ),
+              ],
+            )
+          : null,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 18.0),
@@ -180,27 +350,56 @@ class _AccountsTabState extends State<AccountsTab> {
                           : ListView.builder(
                               itemCount: recordList.length,
                               itemBuilder: (context, index) {
-                                return MaterialButton(
-                                    padding: EdgeInsets.zero,
-                                    onPressed: () {
+                                final record = recordList[index];
+                                final isSelected =
+                                    selectedRecords.contains(record.id);
+                                return InkWell(
+                                  onTap: () {
+                                    if (isSelectionMode) {
+                                      toggleSelection(record.id);
+                                    } else {
                                       Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                               builder: (context) =>
                                                   AddAccountScreen(
-                                                    model:
-                                                        recordList[index].model,
+                                                    model: record.model,
                                                     isShowData: true,
-                                                    id: recordList[index].id,
+                                                    id: record.id,
                                                   )));
-                                    },
-                                    child: AccountWidget(
-                                      iconPath: _getImage(
-                                          recordList[index].model.logoValue),
-                                      name: recordList[index].model.name,
-                                      userName:
-                                          recordList[index].model.username,
-                                    ));
+                                    }
+                                  },
+                                  onLongPress: () {
+                                    setState(() {
+                                      isSelectionMode = true;
+                                      selectedRecords.add(record.id);
+                                    });
+                                  },
+                                  child: Container(
+                                    color: isSelected
+                                        ? BrandColor.green.withOpacity(0.1)
+                                        : Colors.transparent,
+                                    child: Row(
+                                      children: [
+                                        if (isSelectionMode)
+                                          Checkbox(
+                                            value: isSelected,
+                                            onChanged: (value) =>
+                                                toggleSelection(record.id),
+                                            activeColor: BrandColor.green,
+                                          ),
+                                        Expanded(
+                                          child: AccountWidget(
+                                            accountLogo: _getAccountLogo(
+                                                record.model.logoValue),
+                                            name: record.model.name,
+                                            userName: record.model.username,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
                               }))
             ],
           ),
@@ -215,7 +414,7 @@ class _AccountsTabState extends State<AccountsTab> {
                   builder: (context) => const AddAccountScreen()));
         },
         tooltip: 'Add account',
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
