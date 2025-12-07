@@ -24,16 +24,10 @@ keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA \
 ```
 - Store this file **outside** your project directory in a secure location.
 
-### 2. Make Script Executable (First Time Only)
+### 2. Run Build Script
 
 ```bash
-chmod +x build_release.sh
-```
-
-### 3. Run Build Script
-
-```bash
-./build_release.sh
+dart build_release.dart
 ```
 
 The script will prompt you for:
@@ -100,9 +94,10 @@ adb install build/app/outputs/flutter-apk/app-release.apk
 
 ## 🔧 Troubleshooting
 
-### Script not executable
+### Dart not found
 ```bash
-chmod +x build_release.sh
+# Make sure Flutter SDK is in PATH
+flutter doctor -v
 ```
 
 ### File not found when prompted

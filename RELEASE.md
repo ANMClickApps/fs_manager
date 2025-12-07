@@ -82,11 +82,8 @@ android {
 ### Option A: Automated Script (Recommended)
 
 ```bash
-# Make script executable (first time only)
-chmod +x build_release.sh
-
 # Run build script
-./build_release.sh
+dart build_release.dart
 ```
 
 The script will:
